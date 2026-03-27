@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Samagi Annonyadara Subasadaka Samithiya</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="manifest" href="manifest.json">
+</head>
+<body>
+    <div id="installBanner" style="display: none; background: linear-gradient(135deg, #0d9488, #059669); color: white; padding: 18px 24px; justify-content: space-between; align-items: center; z-index: 4000; position: fixed; top: 0; left: 0; width: 100%; box-shadow: 0 4px 15px rgba(0,0,0,0.3); backdrop-filter: blur(12px); border-bottom: 2px solid rgba(255,255,255,0.1);">
+        <div style="display: flex; align-items: center; gap: 18px;">
+            <div id="bannerIconImg" style="background: white; width: 48px; height: 48px; border-radius: 14px; display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 12px rgba(0,0,0,0.15); overflow: hidden;">
+                <i class="fa-solid fa-cloud-arrow-down" style="color: #0d9488; font-size: 1.4rem;"></i>
+            </div>
+            <div>
+                <div style="font-weight: 800; font-size: 1.15rem; letter-spacing: 0.5px; text-shadow: 0 2px 4px rgba(0,0,0,0.1);">Install Samagi App!</div>
+                <div style="font-size: 0.85rem; opacity: 0.95; font-weight: 500;">එසැණින් තොරතුරු බැලීමට (Install) කරන්න.</div>
+            </div>
+        </div>
+        <div style="display: flex; gap: 12px; align-items: center;">
+            <button onclick="document.getElementById('installBanner').style.display='none'" class="btn" style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); font-size: 0.75rem; padding: 6px 14px; text-transform: uppercase;">Maybe Later</button>
+            <button id="installAppMainBtn" class="btn" style="background: white; color: #059669; padding: 10px 28px; border-radius: 30px; font-weight: 900; font-size: 0.95rem; box-shadow: 0 10px 20px -5px rgba(0,0,0,0.25); white-space: nowrap;"><i class="fa-solid fa-download"></i> INSTALL</button>
+        </div>
+    </div>
+
+    <!-- Floating Install Button -->
+    <button id="floatingInstallBtn" class="btn btn-primary" style="display: none; position: fixed; bottom: 30px; right: 30px; z-index: 3500; border-radius: 50px; padding: 15px 30px; box-shadow: 0 15px 35px rgba(13, 148, 136, 0.4); animation: bounce 2s infinite; font-size: 1.1rem; border: 2px solid white;">
+        <i class="fa-solid fa-download"></i> <span id="floatInstallText">App එක ස්ථාපනය කරන්න</span>
+    </button>
+
+    <style>
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {transform: translateY(0) scale(1);}
+            40% {transform: translateY(-15px) scale(1.05);}
+            60% {transform: translateY(-7px) scale(1.02);}
+        }
+    </style>
+
+    <nav>
+        <div class="logo-section">
+            <i class="fa-solid fa-hand-holding-heart" style="color: var(--primary); font-size: 1.5rem;"></i>
+            <span style="font-weight: 800; font-size: 1.1rem; color: var(--primary);">SAMAGI SOCIETY</span>
+        </div>
+        <div class="nav-links">
+            <a class="nav-link active" data-section="home">Home</a>
+            <a class="nav-link" data-section="members">Members</a>
+            <a class="nav-link" data-section="financials">Financials</a>
+            <a class="nav-link" data-section="gallery">Gallery</a>
+            <a class="nav-link admin-only" data-section="notices">Notices</a>
+            <a id="navInstallBtn" class="nav-link" style="display: none; background: var(--success); color: white; border: 2px solid white;"><i class="fa-solid fa-download"></i> Install App</a>
+        </div>
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <span id="currentUserRole" style="font-size: 0.8rem; font-weight: bold; color: var(--primary);"></span>
+            <button id="logoutBtn" class="btn btn-danger btn-sm" style="display: none; padding: 6px 12px; font-size: 0.8rem;">
+                <i class="fa-solid fa-sign-out-alt"></i> Logout
+            </button>
+            <button id="langToggleInfoBtn" class="btn btn-primary btn-sm" onclick="toggleLanguage()" style="padding: 6px 12px; font-size: 0.8rem; background: var(--secondary); border: none; font-weight: bold;">සිංහල</button>
+            <button id="themeToggle" class="btn" style="padding: 8px; background: transparent;"><i class="fa-solid fa-moon"></i></button>
+        </div>
+    </nav>
+
+    <div class="container">
+        
+        <!-- HOME SECTION -->
+        <section id="home" class="section active">
+            <div id="homeInstallCTA" class="glass-card" style="display: none; background: linear-gradient(135deg, #ffffff, #f0fdf9); border: 2px dashed #0d9488; text-align: center; padding: 1.5rem; margin-bottom: 2rem;">
+                <i class="fa-solid fa-mobile-screen-button" style="font-size: 2.5rem; color: var(--primary); margin-bottom: 1rem;"></i>
+                <h3 style="color: var(--primary); margin-bottom: 0.5rem;">Quick Access!</h3>
+                <p style="margin-bottom: 1.5rem; font-size: 0.9rem; color: var(--text-light);">Install this app on your phone for faster access to member details and financials.</p>
+                <button id="homeInstallAppBtn" class="btn btn-primary"><i class="fa-solid fa-download"></i> Install Samagi App</button>
+            </div>
+
+            <div class="glass-card" style="text-align: center;">
+                <div id="logo-container" class="logo-placeholder">
+                    <img src="icon.png" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">
+                </div>
+                <h1>Samagi Annonyadara Subasadaka Samithiya</h1>
+                <p style="color: var(--text-light); font-weight: 500; font-size: 1.1rem; margin-bottom: 2rem;">
+                    Founded on: <span id="founding-date" style="color: var(--primary);">August 4, 2007 (2007/08/04)</span>
+                </p>
+                <div class="grid-form">
+                    <div class="glass-card" style="text-align: center; margin: 0; padding: 1rem;">
+                        <i class="fa-solid fa-location-dot" style="font-size: 1.5rem; color: var(--danger); margin-bottom: 0.5rem;"></i>
+                        <h4 style="margin-bottom: 0.5rem;">Registered Address</h4>
+                        <p id="society-address" class="editable-text">පත්බේරිය - පරකඩුව</p>
+                    </div>
+                </div>
+
+
+                <div class="grid-form" style="margin-top: 2rem;">
+                    <div class="stat-card" style="border-top-color: #3b82f6;">
+                        <i class="fa-solid fa-user-tie" style="font-size: 1.5rem; color: #3b82f6; margin-bottom: 0.5rem;"></i>
+                        <p class="stat-label">Sabhapathi (President)</p>
+                        <input type="text" id="edit-president" class="edit-input" value="Sunil Perera">
+                        <input type="text" id="edit-president-wa" class="edit-input-sm" value="94771234567">
+                    </div>
+                    <div class="stat-card" style="border-top-color: #6366f1;">
+                        <i class="fa-solid fa-book" style="font-size: 1.5rem; color: #6366f1; margin-bottom: 0.5rem;"></i>
+                        <p class="stat-label">Lekam (Secretary)</p>
+                        <input type="text" id="edit-secretary" class="edit-input" value="Kamal Silva">
+                        <input type="text" id="edit-secretary-wa" class="edit-input-sm" value="94712345678">
+                    </div>
+                    <div class="stat-card" style="border-top-color: #f59e0b;">
+                        <i class="fa-solid fa-vault" style="font-size: 1.5rem; color: #f59e0b; margin-bottom: 0.5rem;"></i>
+                        <p class="stat-label">Bhandagarika (Treasurer)</p>
+                        <input type="text" id="edit-treasurer" class="edit-input" value="Ajith Kumara">
+                        <input type="text" id="edit-treasurer-wa" class="edit-input-sm" value="94703456789">
+                    </div>
+                </div>
+
+                <div style="margin-top: 1rem; text-align: right;">
+                    <button id="saveHomeBtn" class="btn btn-success admin-only"><i class="fa-solid fa-save"></i> Save Changes</button>
+                </div>
+
+                <div class="table-container" style="margin-top: 2rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <h4>Executive Committee Officials</h4>
+                        <button onclick="addCommitteeRow()" class="btn btn-primary btn-sm admin-only"><i class="fa-solid fa-plus"></i> Add Official</button>
+                    </div>
+                    <table id="committee-table">
+                        <thead>
+                            <tr><th>Position</th><th>Name</th><th>WhatsApp</th><th width="50" class="admin-only">Action</th></tr>
+                        </thead>
+                        <tbody id="committee-tbody">
+                            <!-- Dynamic rows via app.js -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- MEMBERS SECTION -->
+        <section id="members" class="section">
+            <div class="search-container">
+                <input type="text" id="memberSearch" class="search-input" placeholder="Search by Name or NIC...">
+                <i class="fa-solid fa-magnifying-glass" style="position: absolute; right: 20px; top: 18px; color: var(--text-light);"></i>
+            </div>
+
+            <div class="glass-card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                    <h2>Manage Members</h2>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <label for="yearFilter">Show for Year:</label>
+                        <select id="yearFilter" style="padding: 8px;">
+                            <!-- From 2007 to current -->
+                        </select>
+                    </div>
+                    <button id="addMemberBtn" class="btn btn-primary admin-only"><i class="fa-solid fa-plus"></i> Add Member</button>
+                </div>
+
+                <div class="table-container">
+                    <table id="memberList">
+                        <thead>
+                            <tr>
+                                <th>Joined</th>
+                                <th>NIC</th>
+                                <th>Name</th>
+                                <th>WhatsApp</th>
+                                <th>Dependents</th>
+                                <th class="admin-only">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="memberTableBody">
+                            <!-- Members injected here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- FINANCIALS SECTION -->
+        <section id="financials" class="section">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <p class="stat-label">Total Membership Fees</p>
+                    <p id="totalFees" class="stat-value">Rs. 0</p>
+                </div>
+                <div class="stat-card">
+                    <p class="stat-label">Total Death Contributions</p>
+                    <p id="totalDeathPay" class="stat-value">Rs. 0</p>
+                </div>
+                <div class="stat-card">
+                    <p class="stat-label">Building & Misc Income</p>
+                    <p id="totalBuildingIncome" class="stat-value">Rs. 0</p>
+                </div>
+                <div class="stat-card">
+                    <p class="stat-label">Yearly Balance</p>
+                    <p id="yearlyBalance" class="stat-value" style="color: var(--success);">Rs. 0</p>
+                </div>
+            </div>
+
+            <div class="grid-form">
+                <div class="glass-card admin-only">
+                    <h3>Add Income/Expense</h3>
+                    <form id="financeForm" class="grid-form" style="margin-top: 1rem;">
+                        <div class="input-group">
+                            <label>Year</label>
+                            <input type="number" id="financeYear" value="2026">
+                        </div>
+                        <div class="input-group">
+                            <label>Type</label>
+                            <select id="financeType">
+                                <option value="income">Income (Building/Other)</option>
+                                <option value="expense">Expense (Bill/Repair/Death)</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label>Category</label>
+                            <input type="text" id="financeCategory" placeholder="e.g. Electricity Bill">
+                        </div>
+                        <div class="input-group">
+                            <label>Amount (Rs)</label>
+                            <input type="number" id="financeAmount" placeholder="0.00">
+                        </div>
+                        <button type="submit" class="btn btn-primary" style="grid-column: 1 / -1;">Save Record</button>
+                    </form>
+                </div>
+
+                <div class="glass-card">
+                    <h3>Recent Financial Records</h3>
+                    <div class="table-container" style="margin-top: 1rem;">
+                        <table style="font-size: 0.85rem;">
+                            <thead>
+                                <tr><th>Year</th><th>Cat</th><th>Amount</th><th class="admin-only">Action</th></tr>
+                            </thead>
+                            <tbody id="financeRecordsBody">
+                                <!-- Records here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="glass-card admin-only">
+                    <h3>Settings</h3>
+                    <div class="input-group">
+                        <label>Monthly Fee (Rs)</label>
+                        <input type="number" id="settingMonthlyFee" value="100" onchange="renderFinancials()">
+                    </div>
+                    <div class="input-group" style="margin-top: 10px;">
+                        <label>Death Fee (Rs)</label>
+                        <input type="number" id="settingDeathFee" value="150" onchange="renderFinancials()">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- GALLERY SECTION -->
+        <section id="gallery" class="section">
+            <div class="glass-card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                    <h2>Photo Gallery</h2>
+                    <button id="addPhotoBtn" class="btn btn-primary admin-only"><i class="fa-solid fa-camera"></i> Upload Photo</button>
+                </div>
+                <div class="gallery-grid" id="photoGallery">
+                    <!-- Photos injected here -->
+                </div>
+            </div>
+        </section>
+
+        <!-- NOTICES SECTION -->
+        <section id="notices" class="section">
+            <div class="glass-card">
+                <h2>Member Notice Board</h2>
+                <div class="input-group" style="margin-top: 1.5rem;">
+                    <label>Compose Notice</label>
+                    <textarea id="noticeMessage" rows="4" placeholder="Type message here..."></textarea>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 10px;">
+                    <button id="sendToAllBtn" class="btn btn-success"><i class="fa-brands fa-whatsapp"></i> Send to All Members</button>
+                    <button id="sendToCommitteeBtn" class="btn btn-primary"><i class="fa-brands fa-whatsapp"></i> Send to Committee</button>
+                </div>
+                
+                <div style="margin-top: 2rem;">
+                    <h3>Quick Message Links</h3>
+                    <div class="grid-form" style="margin-top: 1rem;">
+                        <div class="stat-card">
+                            <i class="fa-solid fa-envelope" style="color: var(--primary);"></i>
+                            <p>Monthly Fees Reminder</p>
+                            <button class="btn btn-primary btn-sm" onclick="prepareTemplate('fee')">Use Template</button>
+                        </div>
+                        <div class="stat-card">
+                            <i class="fa-solid fa-skull-crossbones" style="color: var(--danger);"></i>
+                            <p>Death Benefit Notice</p>
+                            <button class="btn btn-danger btn-sm" onclick="prepareTemplate('death')">Use Template</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- MODALS -->
+    <!-- Login Modal -->
+    <div id="loginModal" class="modal-overlay" style="display: none; z-index: 3000;">
+        <div class="modal-content glass-card" style="max-width: 400px; text-align: center;">
+            <i class="fa-solid fa-user-shield" style="font-size: 3rem; color: var(--primary); margin-bottom: 1rem;"></i>
+            <h2 style="margin-bottom: 1.5rem;">System Login</h2>
+            <div class="input-group" style="text-align: left; margin-bottom: 1rem;">
+                <label>Select Role</label>
+                <select id="loginRole" style="width: 100%;">
+                    <option value="Admin">Admin (Main)</option>
+                    <option value="President">Sabhapathi</option>
+                    <option value="Secretary">Lekam</option>
+                    <option value="Treasurer">Bhandagarika</option>
+                    <option value="Member">Member (View Only)</option>
+                </select>
+            </div>
+            <div class="input-group" style="text-align: left; margin-bottom: 1.5rem;" id="pinGroup">
+                <label>PIN Code (මුරපදය: 1234)</label>
+                <input type="text" id="loginPin" placeholder="Enter PIN (e.g., 1234)" style="width: 100%; text-align: center; letter-spacing: 5px; font-size: 1.2rem;">
+            </div>
+            <button id="loginBtn" class="btn btn-primary" style="width: 100%; justify-content: center;">Login</button>
+            <p id="loginError" style="color: var(--danger); margin-top: 10px; display: none;">Invalid PIN!</p>
+        </div>
+    </div>
+
+    <!-- Add Member Modal -->
+    <div id="memberModal" class="modal-overlay" style="display: none;">
+        <div class="modal-content glass-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h2 id="modalTitle">Add New Member</h2>
+                <button onclick="closeModal('memberModal')" class="btn" style="background: transparent; color: var(--text);"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="memberForm">
+                <div class="grid-form">
+                    <div class="input-group"><label>Full Name</label><input type="text" id="mName" required></div>
+                    <div class="input-group"><label>NIC Number</label><input type="text" id="mNIC" required></div>
+                    <div class="input-group"><label>Address</label><input type="text" id="mAddress" required></div>
+                    <div class="input-group"><label>Date of Birth</label><input type="date" id="mDOB"></div>
+                    <div class="input-group"><label>WhatsApp No</label><input type="tel" id="mWApp" placeholder="94771234567"></div>
+                    <div class="input-group"><label>Other Phone</label><input type="tel" id="mPhone"></div>
+                    <div class="input-group"><label>Joined Year</label><input type="number" id="mJoinedYear" value="2026"></div>
+                </div>
+
+                <div style="margin-top: 2rem;">
+                    <h3 style="font-size: 1.1rem;">Dependents (<span id="depCount">0</span>/10)</h3>
+                    <div id="dependentsContainer"></div>
+                    <button type="button" class="btn btn-success" onclick="addDependentField()" style="margin-top: 10px; font-size: 0.8rem;">
+                        <i class="fa-solid fa-plus"></i> Add Dependent
+                    </button>
+                </div>
+
+                <div style="margin-top: 2rem; display: flex; justify-content: flex-end; gap: 10px;">
+                    <button type="button" onclick="closeModal('memberModal')" class="btn">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Member</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <style>
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            padding: 2rem;
+            backdrop-filter: blur(5px);
+        }
+        .modal-content {
+            width: 100%;
+            max-width: 900px;
+            max-height: 90vh;
+            overflow-y: auto;
+            margin-bottom: 0;
+        }
+        .dependent-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 2fr auto;
+            gap: 10px;
+            margin-bottom: 10px;
+            padding: 10px;
+            background: rgba(0,0,0,0.05);
+            border-radius: 8px;
+        }
+        .text-success { color: var(--success); }
+        .editable-text:hover { cursor: pointer; text-decoration: underline; }
+    </style>
+
+    <script src="app.js"></script>
+</body>
+</html>
