@@ -144,6 +144,17 @@ document.addEventListener('DOMContentLoaded', () => {
     renderCommittee();
     loadHomeData();
     setupNavigation();
+    
+    // Set initial dates and filters
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('financeDate').value = today;
+    document.getElementById('dashboardYear').value = currentYear;
+    document.getElementById('recordFilterYear').value = currentYear;
+    
+    // Init categories
+    if (typeof updateFinanceCategories === 'function') {
+        updateFinanceCategories();
+    }
     const displayLogo = societyLogo ? societyLogo : 'icon.png';
     document.getElementById('logo-container').innerHTML = `<img src="${displayLogo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
     updateFavicon(displayLogo);
@@ -267,7 +278,7 @@ window.addEventListener('beforeinstallprompt', (e) => {
     if (banner) banner.style.display = 'flex';
     
     // Show additional UI elements
-    const navBtn = document.getElementById('navInstallBtn');
+    const navBtn = document.getElementById('navInstallTopBtn');
     if (navBtn) navBtn.style.display = 'inline-flex';
     
     const homeCTA = document.getElementById('homeInstallCTA');
@@ -287,14 +298,14 @@ window.addEventListener('appinstalled', (e) => {
 
 function hideInstallUI() {
     if (document.getElementById('installBanner')) document.getElementById('installBanner').style.display = 'none';
-    if (document.getElementById('navInstallBtn')) document.getElementById('navInstallBtn').style.display = 'none';
+    if (document.getElementById('navInstallTopBtn')) document.getElementById('navInstallTopBtn').style.display = 'none';
     if (document.getElementById('homeInstallCTA')) document.getElementById('homeInstallCTA').style.display = 'none';
     if (document.getElementById('floatingInstallBtn')) document.getElementById('floatingInstallBtn').style.display = 'none';
 }
 
 document.addEventListener('click', async (e) => {
-    const installBtnIds = ['installAppMainBtn', 'navInstallBtn', 'homeInstallAppBtn', 'floatingInstallBtn'];
-    const target = e.target.closest('#installAppMainBtn, #navInstallBtn, #homeInstallAppBtn, #floatingInstallBtn');
+    const installBtnIds = ['installAppMainBtn', 'navInstallTopBtn', 'homeInstallAppBtn', 'floatingInstallBtn'];
+    const target = e.target.closest('#installAppMainBtn, #navInstallTopBtn, #homeInstallAppBtn, #floatingInstallBtn');
     
     if (target && installBtnIds.includes(target.id)) {
         if (deferredPrompt) {
@@ -509,7 +520,9 @@ function renderFinancials() {
     let totalExpenses = 0;
 
     const monthlyFee = parseInt(document.getElementById('settingMonthlyFee').value) || 100;
-    const selectedYear = parseInt(document.getElementById('financeYear').value) || currentYear;
+    const dashboardYearEl = document.getElementById('dashboardYear');
+    if (!dashboardYearEl.value) dashboardYearEl.value = currentYear;
+    const selectedYear = parseInt(dashboardYearEl.value) || currentYear;
 
     // Calculate Subscriptions based on members active in THAT year
     const activeInYearCount = members.filter(m => m.joinedYear <= selectedYear).length;
@@ -543,19 +556,26 @@ function renderFinancials() {
     document.getElementById('yearlyBalance').textContent = `Rs. ${grandBalance.toLocaleString()}`;
     document.getElementById('yearlyBalance').style.color = grandBalance >= 0 ? 'var(--success)' : 'var(--danger)';
 
-    renderFinanceRecords();
+    if (typeof renderFinanceRecords === 'function') renderFinanceRecords();
 }
 
 function renderFinanceRecords() {
     const tbody = document.getElementById('financeRecordsBody');
     tbody.innerHTML = '';
-    financials.slice(-10).reverse().forEach((f, index) => {
+    const filterYear = parseInt(document.getElementById('recordFilterYear').value) || currentYear;
+    
+    const filteredRecords = financials.map((f, i) => ({f, i})).filter(x => x.f.year === filterYear);
+    
+    filteredRecords.slice(-10).reverse().forEach((item) => {
+        const f = item.f;
+        const index = item.i;
         const tr = document.createElement('tr');
+        const displayDate = f.date ? f.date : f.year;
         tr.innerHTML = `
-            <td>${f.year}</td>
+            <td>${displayDate}</td>
             <td>${f.category}</td>
             <td>${f.amount}</td>
-            <td class="admin-only"><button class="btn btn-danger btn-sm" onclick="deleteFinance(${financials.length - 1 - index})"><i class="fa-solid fa-trash"></i></button></td>
+            <td class="admin-only"><button class="btn btn-danger btn-sm" onclick="deleteFinance(${index})"><i class="fa-solid fa-trash"></i></button></td>
         `;
         tbody.appendChild(tr);
     });
@@ -571,16 +591,94 @@ function deleteFinance(index) {
 
 document.getElementById('financeForm').onsubmit = (e) => {
     e.preventDefault();
+    const dateVal = document.getElementById('financeDate').value;
+    const yearVal = dateVal ? parseInt(dateVal.split('-')[0]) : currentYear;
+
+    const selectVal = document.getElementById('financeCategorySelect').value;
+    const customVal = document.getElementById('financeCategory').value;
+    const finalCategory = (selectVal === 'Custom' || selectVal.includes('වෙනත්')) ? customVal : selectVal;
+
     const record = {
-        year: parseInt(document.getElementById('financeYear').value),
+        date: dateVal,
+        year: yearVal,
         type: document.getElementById('financeType').value,
-        category: document.getElementById('financeCategory').value,
+        category: finalCategory,
         amount: parseInt(document.getElementById('financeAmount').value)
     };
     financials.push(record);
     localStorage.setItem('samagi_finance', JSON.stringify(financials));
     renderFinancials();
     e.target.reset();
+    
+    // reset form updates
+    document.getElementById('financeDate').value = new Date().toISOString().split('T')[0];
+    updateFinanceCategories();
+};
+
+window.updateFinanceCategories = function() {
+    const type = document.getElementById('financeType').value;
+    const select = document.getElementById('financeCategorySelect');
+    if (!select) return;
+    select.innerHTML = '';
+    
+    let options = [];
+    if (type === 'income') {
+        options = [
+            'සාමාජික ගාස්තු / Member Fees', 
+            'ගොඩනැගිලි කුලිය / Building Rent', 
+            'වෙළඳාම / Trade', 
+            'වෙනත් 1 / Other 1',
+            'වෙනත් 2 / Other 2',
+            'වෙනත් 3 / Other 3',
+            'වෙනත් 4 / Other 4',
+            'වෙනත් 5 / Other 5',
+            'Custom'
+        ];
+    } else {
+        options = [
+            'විදුලිය / Electricity',
+            'මරණාධාර / Death Donations',
+            'ගමන් වියදම් / Travel Expenses',
+            'මුද්‍රණ කටයුතු / Printing',
+            'ලිපිද්‍රව්‍ය / Stationery',
+            'වෙනත් 1 / Other 1',
+            'වෙනත් 2 / Other 2',
+            'වෙනත් 3 / Other 3',
+            'වෙනත් 4 / Other 4',
+            'වෙනත් 5 / Other 5',
+            'Custom'
+        ];
+    }
+
+    options.forEach(opt => {
+        const el = document.createElement('option');
+        el.value = opt;
+        el.textContent = opt;
+        select.appendChild(el);
+    });
+    toggleFinanceCustomCategory();
+};
+
+window.toggleFinanceCustomCategory = function() {
+    const select = document.getElementById('financeCategorySelect');
+    const customInput = document.getElementById('financeCategory');
+    if (select.value === 'Custom' || select.value.includes('වෙනත්')) {
+        customInput.style.display = 'block';
+        customInput.required = true;
+        if (select.value !== 'Custom') {
+            const matches = select.value.match(/වෙනත් \d+/);
+            const prefix = matches ? matches[0] : select.value.split('/')[0].trim();
+            if (!customInput.value.startsWith(prefix)) {
+                customInput.value = prefix + ' - ';
+            }
+        } else {
+            customInput.value = '';
+        }
+    } else {
+        customInput.style.display = 'none';
+        customInput.required = false;
+        customInput.value = '';
+    }
 };
 
 // Gallery Management
