@@ -1,23 +1,71 @@
+// Firebase Initialization
+const firebaseConfig = {
+  apiKey: "AIzaSyB9VziVCtIffdMTYHtH3Fd7AB8sb3X1c8I",
+  authDomain: "school-f6436.firebaseapp.com",
+  projectId: "school-f6436",
+  storageBucket: "school-f6436.firebasestorage.app",
+  messagingSenderId: "416612644923",
+  appId: "1:416612644923:web:b9e636dcb9031dfd96841e"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
 // State Management
-let members = JSON.parse(localStorage.getItem('samagi_members')) || [];
-let financials = JSON.parse(localStorage.getItem('samagi_finance')) || [];
-let committee = JSON.parse(localStorage.getItem('samagi_committee')) || [];
-let homeData = JSON.parse(localStorage.getItem('samagi_home')) || {
+let members = [];
+let financials = [];
+let committee = [];
+let homeData = {
     pres: 'Sunil Perera', presWA: '94771234567',
     sec: 'Kamal Silva', secWA: '94712345678',
     tres: 'Ajith Kumara', tresWA: '94703456789',
     addr: 'පත්බේරිය - පරකඩුව'
 };
-
-if (homeData.addr === 'Colombo Road, Maharagama') {
-    homeData.addr = 'පත්බේරිය - පරකඩුව';
-    localStorage.setItem('samagi_home', JSON.stringify(homeData));
-}
-
-let gallery = JSON.parse(localStorage.getItem('samagi_gallery')) || [];
-let societyLogo = localStorage.getItem('samagi_logo') || '';
+let gallery = [];
+let societyLogo = 'icon.png';
 let currentYear = new Date().getFullYear();
 let currentRole = localStorage.getItem('samagi_role') || null;
+
+// Real-time Firestore Listeners
+db.collection('members').onSnapshot((snapshot) => {
+    members = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    renderMembers();
+    renderFinancials();
+});
+
+db.collection('financials').onSnapshot((snapshot) => {
+    financials = snapshot.docs.map(doc => ({ fbId: doc.id, ...doc.data() }));
+    renderFinancials();
+});
+
+db.collection('committee').orderBy('order').onSnapshot((snapshot) => {
+    committee = snapshot.docs.map(doc => ({ fbId: doc.id, ...doc.data() }));
+    if(typeof renderCommittee === 'function') renderCommittee();
+});
+
+db.collection('settings').doc('home').onSnapshot((doc) => {
+    if (doc.exists) {
+        homeData = doc.data();
+        if(typeof loadHomeData === 'function') loadHomeData();
+    }
+});
+
+db.collection('settings').doc('logo').onSnapshot((doc) => {
+    if (doc.exists) {
+        societyLogo = doc.data().url || 'icon.png';
+        const logoContainer = document.getElementById('logo-container');
+        if(logoContainer) logoContainer.innerHTML = `<img src="${societyLogo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+        const bannerIcon = document.getElementById('bannerIconImg');
+        if (bannerIcon) bannerIcon.innerHTML = `<img src="${societyLogo}" style="width:100%;height:100%;object-fit:cover;border-radius:14px;">`;
+        if(typeof updateFavicon === 'function') updateFavicon(societyLogo);
+        if(typeof updateManifest === 'function') updateManifest();
+    }
+});
+
+db.collection('gallery').onSnapshot((snapshot) => {
+    gallery = snapshot.docs.map(doc => ({ fbId: doc.id, ...doc.data() }));
+    if(typeof renderGallery === 'function') renderGallery();
+});
+
 
 // Translation Engine
 let currentLang = localStorage.getItem('samagi_lang') || 'si';
@@ -424,7 +472,7 @@ function renderMembers() {
             <td><a href="https://wa.me/${m.whatsapp}" target="_blank" style="color:var(--success);text-decoration:none;"><i class="fa-brands fa-whatsapp"></i> ${m.whatsapp}</a></td>
             <td>${m.dependents ? m.dependents.length : 0}</td>
             <td class="admin-only">
-                <button class="btn btn-danger btn-sm" onclick="deleteMember(${m.id})"><i class="fa-solid fa-trash"></i></button>
+                <button class="btn btn-danger btn-sm" onclick="deleteMember('${m.id}')"><i class="fa-solid fa-trash"></i></button>
             </td>
         `;
         tbody.appendChild(tr);
@@ -487,7 +535,6 @@ memberForm.onsubmit = (e) => {
     });
 
     const newMember = {
-        id: Date.now(),
         name: document.getElementById('mName').value,
         nic: document.getElementById('mNIC').value,
         address: document.getElementById('mAddress').value,
@@ -498,17 +545,14 @@ memberForm.onsubmit = (e) => {
         dependents: deps
     };
 
-    members.push(newMember);
-    localStorage.setItem('samagi_members', JSON.stringify(members));
-    renderMembers();
-    closeModal('memberModal');
+    db.collection('members').add(newMember).then(() => {
+        closeModal('memberModal');
+    }).catch(e => console.error(e));
 };
 
 function deleteMember(id) {
     if (confirm(t("Are you sure you want to remove this member?"))) {
-        members = members.filter(m => m.id !== id);
-        localStorage.setItem('samagi_members', JSON.stringify(members));
-        renderMembers();
+        db.collection('members').doc(id).delete();
     }
 }
 
@@ -575,17 +619,15 @@ function renderFinanceRecords() {
             <td>${displayDate}</td>
             <td>${f.category}</td>
             <td>${f.amount}</td>
-            <td class="admin-only"><button class="btn btn-danger btn-sm" onclick="deleteFinance(${index})"><i class="fa-solid fa-trash"></i></button></td>
+            <td class="admin-only"><button class="btn btn-danger btn-sm" onclick="deleteFinance('${f.fbId}')"><i class="fa-solid fa-trash"></i></button></td>
         `;
         tbody.appendChild(tr);
     });
 }
 
-function deleteFinance(index) {
+function deleteFinance(fbId) {
     if (confirm(t("Delete this record?"))) {
-        financials.splice(index, 1);
-        localStorage.setItem('samagi_finance', JSON.stringify(financials));
-        renderFinancials();
+        db.collection('financials').doc(fbId).delete();
     }
 }
 
@@ -605,9 +647,7 @@ document.getElementById('financeForm').onsubmit = (e) => {
         category: finalCategory,
         amount: parseInt(document.getElementById('financeAmount').value)
     };
-    financials.push(record);
-    localStorage.setItem('samagi_finance', JSON.stringify(financials));
-    renderFinancials();
+    db.collection('financials').add(record).catch(e => console.error(e));
     e.target.reset();
     
     // reset form updates
@@ -694,7 +734,7 @@ function renderGallery() {
             <div class="gallery-overlay">
                 <strong>${p.title}</strong><br>
                 <small>${p.date}</small>
-                <button class="admin-only" onclick="deletePhoto(${p.id})" style="background:transparent;border:none;color:white;cursor:pointer;float:right;"><i class="fa-solid fa-trash"></i></button>
+                <button class="admin-only" onclick="deletePhoto('${p.fbId}')" style="background:transparent;border:none;color:white;cursor:pointer;float:right;"><i class="fa-solid fa-trash"></i></button>
             </div>
         `;
         container.appendChild(div);
@@ -707,17 +747,13 @@ document.getElementById('addPhotoBtn').onclick = () => {
     const url = prompt(t("Enter Image URL (or use a sample URL):"), "https://picsum.photos/400/300?random=" + Math.random());
     
     if (title && url) {
-        gallery.push({ id: Date.now(), title, date, url });
-        localStorage.setItem('samagi_gallery', JSON.stringify(gallery));
-        renderGallery();
+        db.collection('gallery').add({ title, date, url });
     }
 };
 
-function deletePhoto(id) {
+function deletePhoto(fbId) {
     if (confirm(t("Delete this photo?"))) {
-        gallery = gallery.filter(p => p.id !== id);
-        localStorage.setItem('samagi_gallery', JSON.stringify(gallery));
-        renderGallery();
+        db.collection('gallery').doc(fbId).delete();
     }
 }
 
@@ -769,13 +805,7 @@ document.getElementById('logo-container').onclick = () => {
         const file = e.target.files[0];
         const reader = new FileReader();
         reader.onload = () => {
-            societyLogo = reader.result;
-            localStorage.setItem('samagi_logo', societyLogo);
-            document.getElementById('logo-container').innerHTML = `<img src="${societyLogo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
-            const bannerIcon = document.getElementById('bannerIconImg');
-            if (bannerIcon) bannerIcon.innerHTML = `<img src="${societyLogo}" style="width:100%;height:100%;object-fit:cover;border-radius:14px;">`;
-            updateFavicon(societyLogo);
-            updateManifest();
+            db.collection('settings').doc('logo').set({ url: reader.result });
         };
         reader.readAsDataURL(file);
     };
@@ -792,45 +822,30 @@ function updateFavicon(src) {
     link.href = src;
 }
 
-// Dummy Data if empty
-if (members.length === 0) {
-    members = [
-        { id: 1, name: "Prasanna Jayakody", nic: "781234567V", address: "No 45, Maharagama", whatsapp: "94770001111", joinedYear: 2008, dependents: [{}, {}] },
-        { id: 2, name: "Chitra Perera", nic: "825544332V", address: "Station Rd, Kottawa", whatsapp: "94711112222", joinedYear: 2015, dependents: [{}] },
-        { id: 3, name: "Sunil Silva", nic: "651239845V", address: "Borella Road, Pannipitiya", whatsapp: "94701234567", joinedYear: 2025, dependents: [] }
-    ];
-    localStorage.setItem('samagi_members', JSON.stringify(members));
-
-    financials = [
-        { year: 2025, type: 'income', category: 'Building Rent', amount: 36000 },
-        { year: 2026, type: 'expense', category: 'Death Benefit (Family of Sunil)', amount: 25000 }
-    ];
-    localStorage.setItem('samagi_finance', JSON.stringify(financials));
-    
-    renderMembers();
-    renderFinancials();
-}
-
 // Home Data Management
 function loadHomeData() {
-    document.getElementById('edit-president').value = homeData.pres;
-    document.getElementById('edit-president-wa').value = homeData.presWA;
-    document.getElementById('edit-secretary').value = homeData.sec;
-    document.getElementById('edit-secretary-wa').value = homeData.secWA;
-    document.getElementById('edit-treasurer').value = homeData.tres;
-    document.getElementById('edit-treasurer-wa').value = homeData.tresWA;
-    document.getElementById('society-address').textContent = homeData.addr;
+    document.getElementById('edit-president').value = homeData.pres || '';
+    document.getElementById('edit-president-wa').value = homeData.presWA || '';
+    document.getElementById('edit-secretary').value = homeData.sec || '';
+    document.getElementById('edit-secretary-wa').value = homeData.secWA || '';
+    document.getElementById('edit-treasurer').value = homeData.tres || '';
+    document.getElementById('edit-treasurer-wa').value = homeData.tresWA || '';
+    document.getElementById('society-address').textContent = homeData.addr || '';
 }
 
 document.getElementById('saveHomeBtn').onclick = () => {
-    homeData.pres = document.getElementById('edit-president').value;
-    homeData.presWA = document.getElementById('edit-president-wa').value;
-    homeData.sec = document.getElementById('edit-secretary').value;
-    homeData.secWA = document.getElementById('edit-secretary-wa').value;
-    homeData.tres = document.getElementById('edit-treasurer').value;
-    homeData.tresWA = document.getElementById('edit-treasurer-wa').value;
-    localStorage.setItem('samagi_home', JSON.stringify(homeData));
-    alert(t("Home page details saved!"));
+    const updatedHomeData = {
+        pres: document.getElementById('edit-president').value,
+        presWA: document.getElementById('edit-president-wa').value,
+        sec: document.getElementById('edit-secretary').value,
+        secWA: document.getElementById('edit-secretary-wa').value,
+        tres: document.getElementById('edit-treasurer').value,
+        tresWA: document.getElementById('edit-treasurer-wa').value,
+        addr: document.getElementById('society-address').textContent
+    };
+    db.collection('settings').doc('home').set(updatedHomeData).then(() => {
+        alert(t("Home page details saved!"));
+    });
 };
 
 // Committee Management
@@ -840,41 +855,26 @@ function renderCommittee() {
     committee.forEach((c, index) => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td><input type="text" value="${c.pos}" onchange="updateCommittee(${index}, 'pos', this.value)" style="width:100%; border:none; background:transparent;"></td>
-            <td><input type="text" value="${c.name}" onchange="updateCommittee(${index}, 'name', this.value)" style="width:100%; border:none; background:transparent;"></td>
-            <td><input type="text" value="${c.wa}" onchange="updateCommittee(${index}, 'wa', this.value)" style="width:100%; border:none; background:transparent;"></td>
-            <td class="admin-only"><button class="btn btn-danger btn-sm" onclick="deleteCommittee(${index})"><i class="fa-solid fa-trash"></i></button></td>
+            <td><input type="text" value="${c.pos}" onchange="updateCommittee('${c.fbId}', 'pos', this.value)" style="width:100%; border:none; background:transparent;"></td>
+            <td><input type="text" value="${c.name}" onchange="updateCommittee('${c.fbId}', 'name', this.value)" style="width:100%; border:none; background:transparent;"></td>
+            <td><input type="text" value="${c.wa}" onchange="updateCommittee('${c.fbId}', 'wa', this.value)" style="width:100%; border:none; background:transparent;"></td>
+            <td class="admin-only"><button class="btn btn-danger btn-sm" onclick="deleteCommittee('${c.fbId}')"><i class="fa-solid fa-trash"></i></button></td>
         `;
         tbody.appendChild(tr);
     });
 }
 
 function addCommitteeRow() {
-    committee.push({ pos: 'New Role', name: '-', wa: '-' });
-    localStorage.setItem('samagi_committee', JSON.stringify(committee));
-    renderCommittee();
+    db.collection('committee').add({ pos: 'New Role', name: '-', wa: '-', order: committee.length });
 }
 
-function updateCommittee(index, field, value) {
-    committee[index][field] = value;
-    localStorage.setItem('samagi_committee', JSON.stringify(committee));
+function updateCommittee(fbId, field, value) {
+    db.collection('committee').doc(fbId).update({ [field]: value });
 }
 
-function deleteCommittee(index) {
+function deleteCommittee(fbId) {
     if (confirm(t("Delete this official?"))) {
-        committee.splice(index, 1);
-        localStorage.setItem('samagi_committee', JSON.stringify(committee));
-        renderCommittee();
+        db.collection('committee').doc(fbId).delete();
     }
 }
 
-// Dummy Committee Data
-if (committee.length === 0) {
-    committee = [
-        { pos: 'Upa Sabhapathi', name: 'T. Perera', wa: '07...' },
-        { pos: 'Upa Lekam', name: 'M. Fernando', wa: '07...' },
-        { pos: 'Anushasaka', name: 'Ven. Dhammapala', wa: '07...' }
-    ];
-    localStorage.setItem('samagi_committee', JSON.stringify(committee));
-    renderCommittee();
-}
