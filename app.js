@@ -126,6 +126,14 @@ window.toggleLanguage = function() {
     if (currentRole) applyRolePermissions();
 };
 
+// Progressive Web App (PWA) Setup
+let newWorker;
+function triggerUpdate() {
+    if (newWorker) {
+        newWorker.postMessage({ type: 'SKIP_WAITING' });
+    }
+}
+
 // Initialize App
 document.addEventListener('DOMContentLoaded', () => {
     initTranslation();
@@ -142,26 +150,33 @@ document.addEventListener('DOMContentLoaded', () => {
     const bannerIcon = document.getElementById('bannerIconImg');
     if (bannerIcon) bannerIcon.innerHTML = `<img src="${displayLogo}" style="width:100%;height:100%;object-fit:cover;border-radius:14px;">`;
 
-    // Progressive Web App (PWA) Setup
+    // PWA Setup
     updateManifest();
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('sw.js').then(reg => {
-            reg.onupdatefound = () => {
-                const installingWorker = reg.installing;
-                installingWorker.onstatechange = () => {
-                    if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                        // Instead of auto-reloading, show the banner
+            reg.addEventListener('updatefound', () => {
+                newWorker = reg.installing;
+                newWorker.addEventListener('statechange', () => {
+                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
                         const updateBanner = document.getElementById('updateBanner');
                         if (updateBanner) updateBanner.style.display = 'block';
                     }
-                };
-            };
+                });
+            });
+            // If there's already a waiting worker
+            if (reg.waiting && navigator.serviceWorker.controller) {
+                newWorker = reg.waiting;
+                const updateBanner = document.getElementById('updateBanner');
+                if (updateBanner) updateBanner.style.display = 'block';
+            }
         });
         
-        // Listen for new worker taking control
+        let refreshing = false;
         navigator.serviceWorker.addEventListener('controllerchange', () => {
-            // Optional: You could reload here too, but the banner button does it.
-            // If the user already clicked "Refresh Now", this won't do much.
+            if (!refreshing) {
+                window.location.reload();
+                refreshing = true;
+            }
         });
     }
 
