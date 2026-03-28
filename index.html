@@ -12,6 +12,15 @@
     <link rel="manifest" href="manifest.json">
 </head>
 <body>
+    <!-- Update Banner (Hidden by Default) -->
+    <div id="updateBanner" style="display: none; background: #f59e0b; color: white; padding: 12px 20px; text-align: center; position: sticky; top: 0; z-index: 5000; box-shadow: 0 4px 12px rgba(0,0,0,0.2); font-weight: 800; animation: slideDown 0.4s ease-out;">
+        <i class="fa-solid fa-circle-info"></i> <span id="updateText">New Update Available!</span> 
+        <button onclick="window.location.reload()" class="btn btn-sm" style="background: white; color: #f59e0b; margin-left: 15px; padding: 5px 15px; border-radius: 20px; font-weight: 800; box-shadow: 0 4px 10px rgba(0,0,0,0.1);"><i class="fa-solid fa-arrows-rotate"></i> REFRESH NOW</button>
+    </div>
+
+    <style>
+        @keyframes slideDown { from { transform: translateY(-100%); } to { transform: translateY(0); } }
+    </style>
     <div id="installBanner" style="display: none; background: linear-gradient(135deg, #0d9488, #059669); color: white; padding: 18px 24px; justify-content: space-between; align-items: center; z-index: 4000; position: fixed; top: 0; left: 0; width: 100%; box-shadow: 0 4px 15px rgba(0,0,0,0.3); backdrop-filter: blur(12px); border-bottom: 2px solid rgba(255,255,255,0.1);">
         <div style="display: flex; align-items: center; gap: 18px;">
             <div id="bannerIconImg" style="background: white; width: 48px; height: 48px; border-radius: 14px; display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 12px rgba(0,0,0,0.15); overflow: hidden;">

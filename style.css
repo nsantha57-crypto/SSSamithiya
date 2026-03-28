@@ -273,18 +273,29 @@ th {
 @media (max-width: 768px) {
     nav {
         padding: 0.5rem 1rem;
-        flex-direction: column;
-        gap: 10px;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 12px;
+    }
+
+    .logo-section {
+        order: 1;
+    }
+
+    nav > div:last-child {
+        order: 2;
+        gap: 5px !important;
     }
 
     .nav-links {
-        display: flex;
+        order: 3;
         width: 100%;
         overflow-x: auto;
         padding-bottom: 5px;
-        gap: 10px;
+        gap: 8px;
         justify-content: flex-start;
         -webkit-overflow-scrolling: touch;
+        margin-top: 5px;
     }
 
     .nav-link {

@@ -53,7 +53,8 @@ const transDict = {
     "Enter Event Name:": "අවස්ථාවේ නම (Event Name) ඇතුලත් කරන්න:", "Enter Date (YYYY/MM/DD):": "දිනය ඇතුලත් කරන්න (YYYY/MM/DD):",
     "Enter Image URL (or use a sample URL):": "පින්තූරයේ URL එක ලබාදෙන්න:", "Delete this photo?": "මෙම පින්තූරය මකා දැමිය යුතුද?",
     "No members found.": "සාමාජිකයින් හමුවූයේ නැත.", "Send via WhatsApp? (Click 'Cancel' for SMS)": "WhatsApp හරහා යවන්නද? (SMS සඳහා 'Cancel' ඔබන්න)",
-    "Delete this official?": "මෙම නිලධාරියාව ඉවත් කිරීමට අවශ්‍ය බව විශ්වාසද?", "Role: ": "තනතුර: ", "Admin": "ප්‍රධාන පරිපාලක", "Member": "සාමාජික"
+    "Delete this official?": "මෙම නිලධාරියාව ඉවත් කිරීමට අවශ්‍ය බව විශ්වාසද?", "Role: ": "තනතුර: ", "Admin": "ප්‍රධාන පරිපාලක", "Member": "සාමාජික",
+    "New Update Available!": "අලුත් වෙනසක් තිබේ!", "REFRESH NOW": "දැන් ලබාගන්න"
 };
 
 const placeholderDictTransl = {
@@ -66,6 +67,12 @@ let textNodesCache = [];
 let placeholderCache = [];
 
 function initTranslation() {
+    // Translation for Update Banner
+    if (document.getElementById('updateBanner')) {
+        document.getElementById('updateText').textContent = t("New Update Available!");
+        document.querySelector('#updateBanner button').textContent = t("REFRESH NOW");
+    }
+
     const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
     let node;
     while(node = walker.nextNode()) {
@@ -88,6 +95,12 @@ function initTranslation() {
 
 function applyTranslation() {
     const isEn = currentLang === 'en';
+    
+    if (document.getElementById('updateBanner')) {
+        document.getElementById('updateText').textContent = isEn ? "New Update Available!" : "අලුත් වෙනසක් තිබේ!";
+        document.querySelector('#updateBanner button').innerHTML = `<i class="fa-solid fa-arrows-rotate"></i> ` + (isEn ? "REFRESH NOW" : "දැන් ලබාගන්න");
+    }
+
     textNodesCache.forEach(item => {
         item.node.nodeValue = item.prefix + (isEn ? item.enText : transDict[item.enText]) + item.suffix;
     });
@@ -137,18 +150,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 const installingWorker = reg.installing;
                 installingWorker.onstatechange = () => {
                     if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                        window.location.reload();
+                        // Instead of auto-reloading, show the banner
+                        const updateBanner = document.getElementById('updateBanner');
+                        if (updateBanner) updateBanner.style.display = 'block';
                     }
                 };
             };
         });
         
-        let refreshing = false;
+        // Listen for new worker taking control
         navigator.serviceWorker.addEventListener('controllerchange', () => {
-            if (!refreshing) {
-                window.location.reload();
-                refreshing = true;
-            }
+            // Optional: You could reload here too, but the banner button does it.
+            // If the user already clicked "Refresh Now", this won't do much.
         });
     }
 
