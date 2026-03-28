@@ -188,6 +188,10 @@ input:focus {
     transform: scale(0.95);
 }
 
+#refreshBtn:hover i {
+    transform: rotate(180deg);
+}
+
 .btn-primary {
     background: linear-gradient(135deg, var(--primary), var(--primary-light));
     color: white;

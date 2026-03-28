@@ -628,6 +628,12 @@ document.getElementById('themeToggle').onclick = () => {
     document.querySelector('#themeToggle i').className = next === 'dark' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
 };
 
+// Manual Page Refresh
+document.getElementById('refreshBtn').onclick = () => {
+    window.location.reload();
+};
+
+
 // Logo Upload
 document.getElementById('logo-container').onclick = () => {
     const input = document.createElement('input');
